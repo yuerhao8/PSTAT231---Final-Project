@@ -1,0 +1,136 @@
+---
+title: "PSTAT231 Final Project: Credit Card Fraud Detection with Machine Learning"
+author: "Yuer Hao"
+date: "2022-11-02"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\    
+“Have you gone insane? How come to earth you were doing the a Casino?!" My sweet dream was interrupt by the call (in fact yelling) of my mother. Of course I did not spent 10,000 yuan in a casino--it was credit card fraud. Studies shows (data) have once or more expereinced credit card fraud. Especially in card use overseas, credit card information is easily attainable as time differentiates in the banking systems. Although most banks usually discharge the cardholder, the money are not refunded in many cases. How can we use our acknowledge from PSTAT231 to solve this real world problem?  
+```{r, eval=TRUE}
+knitr::include_graphics("/Users/Yuer_Hao/Desktop/PSTAT231---Final-Project/Picture/Cover.jpg")
+```
+
+## 1. Introduction
+### 1.1 The purpose of this project 
+
+### 1.2 Some facts you need to know about Credit Card Fraud
+Almost 40 percent of card holders do not have email or text alerts from their credit card company or bank enabled. Around 81 percent of victims without these notifications had to take additional action to reverse fraudulent charges, compared to just 19 percent of those with alerts enabled.
+
+```{r video}
+```
+### 1.3 Why might this model be useful?
+
+## 2. An overview of dataset
+This project uses MACHINE LEARNING GROUP - ULB's dataset from [Kaggle](<https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud>)  
+
+The dataset contains credit card transactions done by European cardholders in September 2013.
+This dataset presents transactions that occurred in two days, where we have 492 frauds out of 284,807 transactions. The dataset is quite unbalanced, with frauds making up 0.172% of all transactions in the positive class (frauds) account.    
+There are 284807 observations and 31 columns in this dataset. There are 1 response variable and 30 predictor variables. Additionally, 30 of them are numerical, while 1 is binary. The response variable, "Class," has a value of 1 in cases of fraud and 0 in all other cases.
+
+- `Time`: (Data Type: continuous) Number of seconds elapsed between this transaction and the first transaction in the dataset  
+
+- `V1-V28`: (Data Type: continuous) May be result of a PCA Dimensionality reduction to protect user identities and sensitive features  
+
+- `Amount`: (Data Type: continuous) Transaction Amount  
+
+- `Class`: (Data Type: nominal) The response variable and it takes value 1 in case of fraud and 0 otherwise  
+*Note: a full copy of the codebook is available in zipped final projecct files.*
+
+### 2.1 Loading Data and Packages
+```{r Loading Data, class.source = 'fold-show'}
+# read in the data
+raw_data <- read.csv("/Users/Yuer_Hao/Desktop/PSTAT231---Final-Project/data/creditcard.csv")
+head(raw_data)
+```
+```{r Loading packages, warning=FALSE, include=FALSE}
+library(tidymodels)
+library(tidyverse)
+library(ISLR) # For the Smarket data set
+library(ISLR2) # For the Bikeshare data set
+library(discrim)
+library(poissonreg)
+library(corrr)
+library(klaR) # for naive bayes
+library(forcats)
+library(corrplot)
+library(pROC)
+library(recipes)
+library(rsample)
+library(parsnip)
+library(workflows)
+library(janitor)
+library(glmnet)
+library(rpart.plot)
+library(vip)
+library(janitor)
+library(ROSE)
+library(randomForest)
+library(xgboost)
+library(kknn)
+library(skimr)
+library(patchwork)
+library(janitor)
+tidymodels_prefer()
+set.seed(231)
+```
+
+## 3. Data Cleaning
+While the data set that was downloaded was tidy, a few different cleaning steps were necessary before the split occurred:
+### 3.1 Clean name
+```{r column name,class.source = 'fold-show'}
+occard_data <- raw_data %>% 
+  clean_names()
+```
+### 3.2 Deal with imbalanced problems
+Let's now determine whether or not our response variable is balanced. If not, we must resolve the situation.  
+```{r balance check,class.source = 'fold-show'}
+table(occard_data$class)
+```
+We can tell our response variable is highly unbalanced. Observations on "0" class are far more frequent than "1" class. We need to use some functions to address this problem, otherwise this will have a significant impact on our prediction models. The TA suggests that we employ the ovun.sample() function to processing it.
+```{r}
+ccard_data<- ovun.sample(class~.,data = occard_data,
+                             p=0.5,seed = 1,method = "under")$data
+```
+
+```{r,class.source = 'fold-show'}
+table(ccard_data$class)
+```
+our response variable is almost balanced.   
+### 3.3 Convert class to factor
+```{r, class.source = 'fold-show'}
+ccard_data <- ccard_data %>%
+  mutate(class = factor(class, levels = c("1", "0"))) 
+```
+### 3.4 Check missing value
+```{r missing value, class.source = 'fold-show'}
+sum(is.na(ccard_data))
+```
+### 3.5 Summary
+```{r, class.source = 'fold-show'}
+summary(ccard_data$amount)
+var(ccard_data$amount)
+# show me how many observations in the new dataset
+# show me how many variables in the new dataset
+dim(ccard_data) 
+```
+
+
+### 3.6 Clean name
+
+```{r, class.source = 'fold-show'}
+ccard_data$amount <- scale(ccard_data$amount)
+head(ccard_data)
+```
+We completed the the process of data cleaning.  
