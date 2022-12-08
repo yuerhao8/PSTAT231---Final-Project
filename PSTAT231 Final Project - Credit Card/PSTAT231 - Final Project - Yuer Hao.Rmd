@@ -36,7 +36,8 @@ Almost 40 percent of card holders do not have email or text alerts from their cr
 This project uses MACHINE LEARNING GROUP - ULB's dataset from [Kaggle](<https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud>)  
 
 The dataset contains credit card transactions done by European cardholders in September 2013.
-This dataset presents transactions that occurred in two days, where we have 492 frauds out of 284,807 transactions. The dataset is quite unbalanced, with frauds making up 0.172% of all transactions in the positive class (frauds) account.  
+This dataset presents transactions that occurred in two days, where we have 492 frauds out of 284,807 transactions. The dataset is quite unbalanced, with frauds making up 0.172% of all transactions in the positive class (frauds) account.    
+There are 284807 observations and 31 columns in this dataset. There are 1 response variable and 30 predictor variables. Additionally, 30 of them are numerical, while 1 is binary. The response variable, "Class," has a value of 1 in cases of fraud and 0 in all other cases.
 
 - `Time`: (Data Type: continuous) Number of seconds elapsed between this transaction and the first transaction in the dataset  
 
@@ -53,11 +54,6 @@ This dataset presents transactions that occurred in two days, where we have 492 
 raw_data <- read.csv("/Users/Yuer_Hao/Desktop/PSTAT231 Final Project: Credit Card/data/creditcard.csv")
 head(raw_data)
 ```
-```{r dimension, class.source = 'fold-show'}
-dimension <- dim(raw_data)
-dimension
-```
-
 ```{r Loading packages, warning=FALSE, include=FALSE}
 library(tidymodels)
 library(tidyverse)
@@ -79,6 +75,7 @@ library(glmnet)
 library(rpart.plot)
 library(vip)
 library(janitor)
+library(ROSE)
 library(randomForest)
 library(xgboost)
 library(kknn)
@@ -86,6 +83,41 @@ library(skimr)
 library(patchwork)
 library(janitor)
 tidymodels_prefer()
+set.seed(231)
 ```
 
+## 3. Data Cleaning
+While the data set that was downloaded was tidy, a few different cleaning steps were necessary before the split occurred:
+### 3.1 Clean name
+```{r column name,class.source = 'fold-show'}
+occard_data <- raw_data %>% 
+  clean_names()
+```
+### 3.2 Deal with imbalanced problems
+Let's now determine whether or not our response variable is balanced. If not, we must resolve the situation.  
+```{r balance check,class.source = 'fold-show'}
+table(occard_data$class)
+```
+We can tell our response variable is highly unbalanced. Observations on "0" class are far more frequent than "1" class. We need to use some functions to address this problem, otherwise this will have a significant impact on our prediction models. The TA suggests that we employ the ovun.sample() function to processing it.
+```{r}
+ccard_data<- ovun.sample(class~.,data = occard_data,
+                             p=0.5,seed = 1,method = "under")$data
+```
 
+```{r balance check,class.source = 'fold-show'}
+table(ccard_data$class)
+```
+our response variable is almost balanced.   
+### 3.3 Convert class to factor
+```{r, class.source = 'fold-show'}
+ccard_data <- ccard_data %>%
+  mutate(class = factor(class, levels = c("1", "0"))) %>%
+  select(-time,)
+
+```
+### 3.4 Check missing value
+```{r missing value, class.source = 'fold-show'}
+sum(is.na(ccard_data))
+```
+### 3.1 Clean name
+### 3.1 Clean name
